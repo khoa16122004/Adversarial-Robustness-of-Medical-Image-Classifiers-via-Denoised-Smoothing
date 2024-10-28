@@ -73,7 +73,6 @@ Dataset/
 - Features:
   - Certification accuracy measurement
   - Multiple noise standard deviation testing
-  - Comprehensive robustness metrics
 
 
 ## Requirements
