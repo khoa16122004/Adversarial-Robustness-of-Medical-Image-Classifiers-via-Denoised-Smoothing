@@ -15,7 +15,11 @@ class Smooth(object):
     # to abstain, Smooth returns this int
     ABSTAIN = -1
 
-    def __init__(self, base_classifier: torch.nn.Module, num_classes: int, sigma: float):
+    def __init__(self, base_classifier: torch.nn.Module,
+                 encoder: torch.nn.Module,
+                 decoder: torch.nn.Module, 
+                 num_classes: int, 
+                 sigma: float):
         """
         :param base_classifier: maps from [batch x channel x height x width] to [batch x num_classes]
         :param num_classes:
@@ -24,6 +28,8 @@ class Smooth(object):
         self.base_classifier = base_classifier
         self.num_classes = num_classes
         self.sigma = sigma
+        self.encoder = encoder
+        self.decoder = decoder
 
     def certify(self, x: torch.tensor, 
                 n0: int, 
@@ -102,7 +108,9 @@ class Smooth(object):
 
                 batch = x.repeat((this_batch_size, 1, 1, 1))
                 noise = torch.randn_like(batch, device='cuda') * self.sigma
-                predictions = self.base_classifier(batch + noise).argmax(1)
+                re, l = self.encoder(batch + noise)
+                out = self.decoder(re, l)
+                predictions = self.base_classifier(out).argmax(1)
                 counts += self._count_arr(predictions.cpu().numpy(), self.num_classes)
             return counts
 

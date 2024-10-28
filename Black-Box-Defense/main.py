@@ -133,11 +133,7 @@ def inference_classify(encoder, decoder, model, test_loader):
             imgs = imgs.cuda()
             labels = labels.cuda()
             output = model(decoder(encoder(imgs)))
-            # if torch.argmax(output) == labels:
-            #     acc_ += 1
             acc = accuracy(output, labels)
-            # if acc != 1:
-            #     print(labels)
             
             acc_meter.update(acc[0].item(), imgs.shape[0])
 
@@ -165,8 +161,6 @@ def main():
     # conv autoencoder
     encoder = get_architecture(args.encoder_arch, args.dataset).cuda()
     decoder = get_architecture(args.decoder_arch, args.dataset).cuda()
-    # encoder = torch.load(args.pretrained_encoder).cuda()
-    # decoder = torch.load(args.pretrained_decoder).cuda()
     
     
     if args.pretrained_encoder:
@@ -178,7 +172,6 @@ def main():
     optimizer = Adam(itertools.chain(encoder.parameters(), decoder.parameters()), lr=args.lr, weight_decay=args.weight_decay)
     scheduler = StepLR(optimizer, step_size=args.lr_step_size, gamma=args.gamma)
     
-    # print(decoder(encoder(torch.randn(1, 3, 384, 384).cuda())).shape)
     # criterion
     criterion = MSELoss(size_average=None, reduce=None, reduction='mean').cuda()
 
@@ -192,7 +185,6 @@ def main():
         inference_classify(encoder, decoder, model, test_loader)
     
     else:
-        # print(decoder(encoder(torch.randn(3, 384, 384).cuda())).shape)
         inference(encoder, decoder, args.img_path)
             
 if __name__ == "__main__":

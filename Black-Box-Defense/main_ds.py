@@ -550,15 +550,6 @@ def test_with_classifier(loader: DataLoader, denoiser: torch.nn.Module, criterio
             
             if i % print_freq == 0:
                 log = f"Test: [{i}/{len(loader)}\t Time {batch_time.val:.3f} {batch_time.avg:.3f} \t Data {data_time.val:.3f} {data_time.avg:.3f}\t Loss {losses.val:.4f} {losses.avg:.4f} \t Acc@1 {top1.val:.3f} {top1.avg:.3f}\n"
-                # .format(
-                #     i, len(loader), 
-                #     batch_time=batch_time,
-                #     data_time=data_time, 
-                #     loss=losses, 
-                #     top1=top1
-                # )
-
-
                 print(log)
         return (losses.avg, top1.avg)
 

@@ -84,12 +84,7 @@ if __name__ == "__main__":
         test_loader = DataLoader(test_dataset, batch_size=1, shuffle=False)
 
 
-    # --------------------- Model Loading -------------------------
-    # a) Classifier / Reconstructor
-    # checkpoint = torch.load(args.base_classifier)
-    # base_classifier = get_architecture(checkpoint['arch'], args.dataset)
-    # base_classifier.load_state_dict(checkpoint['state_dict'])
-    
+    # --------------------- Model Loading -------------------------    
     base_classifier = get_architecture(args.base_classifier, args.dataset)
     
     # b) Denoiser
@@ -98,26 +93,20 @@ if __name__ == "__main__":
         # assert checkpoint['arch'] == args.arch
         denoiser = get_architecture(checkpoint['arch'], args.dataset)
         denoiser.load_state_dict(checkpoint['state_dict'])
-        # denoiser = torch.load(args.pretrained_denoiser)
     else:
         denoiser = get_architecture(args.arch, args.dataset)
 
     # c) AutoEncoder
     if args.model_type == 'AE_DS':
-        # checkpoint = torch.load(args.pretrained_encoder)
-        # assert checkpoint['arch'] == args.encoder_arch
-        # encoder = get_architecture(checkpoint['arch'], args.dataset)
-        # encoder.load_state_dict(checkpoint['state_dict'])
+        encoder = get_architecture(args.encoder_arch, args.dataset)
+        encoder.load_state_dict(torch.load(args.pretrained_encoder))
 
-        # checkpoint = torch.load(args.pretrained_decoder)
-        # assert checkpoint['arch'] == args.decoder_arch
-        # decoder = get_architecture(checkpoint['arch'], args.dataset)
-        # decoder.load_state_dict(checkpoint['state_dict'])
-
-        encoder = torch.load(args.pretrained_encoder)
-        decoder = torch.load(args.pretrained_decoder)
+        decoder = get_architecture(args.decoder_arch, args.dataset)
+        decoder.load_state_dict(torch.load(args.pretrained_decoder))
+            
         
-        base_classifier = torch.nn.Sequential(denoiser, encoder, decoder, base_classifier)
+        
+                
 
     else:
         base_classifier = torch.nn.Sequential(denoiser, base_classifier)
@@ -125,56 +114,33 @@ if __name__ == "__main__":
     base_classifier = base_classifier.eval().cuda()
 
     # create the smooothed classifier g
-    smoothed_classifier = Smooth(base_classifier, # classifier 
+    smoothed_classifier = Smooth(base_classifier, # classifier
+                                 encoder, 
+                                 decoder,
                                  get_num_classes(args.dataset), 
                                  args.sigma)# noise_sd
 
-    # prepare output file
-    # if not os.path.exists(args.outfile.split('sigma')[0]):
-    #     os.makedirs(args.outfile.split('sigma')[0])
-
-    
-    # f = open(args.outfile, 'w')
-    # print("idx\tlabel\tpredict\tradius\tSta_correct\ttime\tcount\tSta_count", file=f, flush=True)
-    # print("idx\tlabel\tpredict\tradius\tSta_correct\ttime\tcount\tSta_count", flush=True)
-    # f.close()
-
-    # iterate through the dataset
     count = 0
     sta_count = 0
     for i, (x, label) in tqdm(enumerate(test_loader)):
-        # only certify every args.skip examples, and stop after args.max examples
         if i % args.skip != 0:
             continue
         if i == args.max:
             break
         count += 1
         before_time = time()
-        # certify the prediction of g around x
         x = x.cuda()
-        # prediction, radius = smoothed_classifier.certify(x, 
         prediction = smoothed_classifier.certify(x, 
                                                  args.N0, 
                                                  args.N, 
                                                  args.alpha, 
                                                  args.batch)
         after_time = time()
-        # correct = int(prediction == label)
-        # print("radius: ", radius)
-        # correct = int(prediction == label and radius > args.l2radius)
         sta_correct = int(prediction == label)
 
-        # count += correct
         sta_count += sta_correct
 
         time_elapsed = str(datetime.timedelta(seconds=(after_time - before_time)))
-
-        # f = open(args.outfile, 'a')
-        # print("{}\t{}\t{}\t{:.3}\t{}\t{}\t{}\t{}".format(
-        #     i, label, prediction, radius, sta_correct, time_elapsed, count, sta_count), file=f, flush=True)
-        # print("{}\t{}\t{}\t{:.3}\t{}\t{}\t{}\t{}".format(
-        #     i, label, prediction, radius, sta_correct, time_elapsed, count, sta_count), flush=True)
-        # f.close()
     print(sta_count / count)
     
     

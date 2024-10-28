@@ -119,22 +119,15 @@ def inference_classify(denoiser, model, test_loader):
     model.eval()
     
     acc_meter = AverageMeter()
-    acc_ = 0
     with torch.no_grad():
         for data in tqdm(test_loader):
             imgs, labels = data
             imgs = imgs.cuda()
             labels = labels.cuda()
             output = model(denoiser(imgs + torch.randn_like(imgs, device='cuda') * args.noise_sd))
-            # output = model(imgs + torch.randn_like(imgs, device='cuda') * args.noise_sd)
-            # if torch.argmax(output) == labels:
-            #     acc_ += 1
             acc = accuracy(output, labels)
-            # if acc != 1:
-            #     print(labels)
             
             acc_meter.update(acc[0].item(), imgs.shape[0])
-
     print(f"Acc: {acc_meter.avg:.4f}")
 
 def main():
@@ -158,13 +151,13 @@ def main():
 
 
     denoiser = get_architecture(args.arch, args.dataset)
-    # if args.pretrained_denoiser:
-    #     # denoiser = torch.load(args.pretrained_denoiser)
-    #     checkpoint = torch.load(args.pretrained_denoiser)
-    #     # assert checkpoint['arch'] == args.arch
-    #     denoiser = get_architecture(checkpoint['arch'], args.dataset)
-    #     denoiser.load_state_dict(checkpoint['state_dict'])
-    # denoiser = torch.load(args.pretrained_denoiser)
+    if args.pretrained_denoiser:
+        # denoiser = torch.load(args.pretrained_denoiser)
+        checkpoint = torch.load(args.pretrained_denoiser)
+        # assert checkpoint['arch'] == args.arch
+        denoiser = get_architecture(checkpoint['arch'], args.dataset)
+        denoiser.load_state_dict(checkpoint['state_dict'])
+    denoiser = torch.load(args.pretrained_denoiser)
 
     # optimizer
     optimizer = Adam(denoiser.parameters(), lr=args.lr, weight_decay=args.weight_decay)

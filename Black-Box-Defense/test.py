@@ -48,6 +48,7 @@ def classfier(model, test_loader):
             imgs, labels = imgs.cuda(), labels.cuda()
             
             imgs = model(imgs)
+            
             acc = accuracy(imgs, labels)
             acc_meter.update(acc[0].item(), imgs.shape[0])
     print(f"Acc: {acc_meter.avg}")
