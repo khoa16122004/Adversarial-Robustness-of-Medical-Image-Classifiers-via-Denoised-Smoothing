@@ -11,6 +11,8 @@ Medical image classification systems are vulnerable to adversarial attacks that 
 This work builds upon:
 1. [Microsoft's Denoised Smoothing](https://github.com/microsoft/denoised-smoothing) - For certified robustness via denoising
 2. [Black-box Defense](https://github.com/damon-demon/Black-Box-Defense) - For optimization techniques
+3. [Adversarial Libraries](https://github.com/jeromerony/adversarial-library)
+4.
 
 ## Datasets
 
